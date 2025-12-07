@@ -1,117 +1,87 @@
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
-import { assets } from "../assets/assets";
-import { Link } from "react-router-dom";
-import { SignedOut, SignedIn, useClerk, UserButton } from "@clerk/clerk-react";
+import {plans} from "../assets/assets.js";
+import {useAuth, useClerk} from "@clerk/clerk-react";
+import {placeOrder} from "../service/OrderService.js";
+import {useContext} from "react";
+import {AppContext} from "../context/AppContext.jsx";
 
-const Menubar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { openSignIn, openSignUp } = useClerk();
 
-  const openRegister = () => {
-    setMenuOpen(false);
-    openSignUp({});
-  };
+const Pricing = () => {
+    const {isSignedIn, getToken} = useAuth();
+    const {openSignIn} = useClerk();
+    const {loadUserCredits, backendUrl} = useContext(AppContext);
 
-  const openLogin = () => {
-    setMenuOpen(false);
-    openSignIn({});
-  };
+    const handleOrder = (planId) => {
+        if (!isSignedIn) {
+            return openSignIn();
+        }
 
-  return (
-    <nav className="bg-white px-8 py-4 flex justify-between items-center">
-      {/* Left side: logo + text */}
-      <Link className="flex items-center space-x-2" to="/">
-        <img
-          src={assets.logo}
-          alt="logo"
-          className="h-8 w-8 object-contain cursor-pointer"
-        />
-        <span className="text-2xl font-semibold text-indigo-700 cursor-pointer">
-          remove.<span className="text-gray-400 cursor-pointer">bg</span>
-        </span>
-      </Link>
+        placeOrder({
+            planId,
+            getToken,
+            onSuccess: () => {
+                loadUserCredits();
+            },
+            backendUrl
+        });
+    }
 
-      {/* Right side: desktop actions */}
-      <div className="hidden md:flex items-center space-x-4">
-        <SignedOut>
-          <button
-            className="text-gray-700 hover:text-blue-500 font-medium"
-            onClick={openLogin}
-          >
-            Login
-          </button>
-          <button
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-full transition-all"
-            onClick={openRegister}
-          >
-            Sign up
-          </button>
-        </SignedOut>
+    return (
+        <div className="py-10 md:px-20 lg:px-20">
+            <div className="container mx-auto px-4">
+                {/* Section title*/}
+                <div className="mb-12 text-center">
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-12 text-center">
+                        Choose your perfect package
+                    </h2>
+                    <p className="mx-auto mt-4 max-w-2xl text-black-400">
+                        Select from our carefully curated photography packages designed to meet your specific needs and budget.
+                    </p>
+                </div>
 
-        <SignedIn>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button className="flex items-center gap-2 bg-blue-100 px-4 sm:px-5 py-1.5 sm:py-2.5 rounded-full hover:bg-blue-200">
-              <img
-                src={assets.credits}
-                alt="credits"
-                height={24}
-                width={24}
-              />
-              <p className="text-xs sm:text-sm font-medium text-gray-600">
-                Credits: 0
-              </p>
-            </button>
-            <UserButton />
-          </div>
-        </SignedIn>
-      </div>
 
-      {/* Hamburger (mobile) */}
-      <div className="flex md:hidden">
-        <button onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
-      </div>
+                {/* Section body*/}
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    {plans.map((plan) => (
+                        <div key={plan.id} className={`relative pt-6 p-6 ${plan.popular ? 'backdrop-blur-lg rounded-2xl' : 'border-gray-800 rounded-xl'} bg-[#1A1A1A] hover:transform hover:-translate-y-2 transition-all duration-300`}>
+                            {plan.popular && (
+                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-purple-600 px-3 py-1 text-white text-sm font-semibold">
+                                    Most Popular
+                                </div>
+                            )}
+                            <div className="text-center p-6">
+                                <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
+                                <div className="mt-4 text-center">
+                                    <span className="text-4xl text-violet-400 font-bold">
+                                        &#8377;{plan.price}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="px-4 pb-8">
+                                <ul className="mb-8 space-y-4">
+                                    <li className="flex items-center text-white">
+                                        {plan.credits}
+                                    </li>
+                                    <li className="flext-items-center text-white">
+                                        {plan.description}
+                                    </li>
+                                </ul>
+                                <button className="w-full py-3 px-6 text-center text-white font-semibold rounded-full
+                  bg-gradient-to-r from-purple-500 to-indigo-500 shadow-lg hover:from-purple-600 hover:to-indigo-600
+                  transition duration-300 ease-in-out transform hover:scale-105 cursor-pointer" onClick={() => handleOrder(plan.id)}>
+                                    Choose plan
+                                </button>
 
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="absolute top-16 right-8 bg-white shadow-md rounded-md flex flex-col space-y-4 w-40">
-          <SignedOut>
-            <button
-              className="text-gray-700 hover:text-blue-500 font-medium"
-              onClick={openLogin}
-            >
-              Login
-            </button>
-            <button
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-full text-center"
-              onClick={openRegister}
-            >
-              Sign up
-            </button>
-          </SignedOut>
+                            </div>
+                        </div>
+                    ))}
 
-          <SignedIn>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button className="flex items-center gap-2 bg-blue-100 px-4 sm:px-5 py-1.5 sm:py-2.5 rounded-full hover:bg-blue-200">
-                <img
-                  src={assets.credits}
-                  alt="credits"
-                  height={24}
-                  width={24}
-                />
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Credits: 0
-                </p>
-              </button>
-              <UserButton />
+                </div>
+
+
+
             </div>
-          </SignedIn>
         </div>
-      )}
-    </nav>
-  );
-};
+    )
+}
 
-export default Menubar;
+export default Pricing;
